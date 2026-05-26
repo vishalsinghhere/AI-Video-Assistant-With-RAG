@@ -49,6 +49,7 @@ audioop-lts
 yt-dlp
 openai-whisper
 langchain
+langchain-chroma
 sentence-transformers
 faiss-cpu
 python-dotenv
