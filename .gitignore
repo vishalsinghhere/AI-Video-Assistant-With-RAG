@@ -15,3 +15,7 @@ downloads/
 
 # OS files
 .DS_Store
+
+downloades/
+vector_db/
+*.wav
