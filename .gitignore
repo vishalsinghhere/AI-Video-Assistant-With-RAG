@@ -19,3 +19,4 @@ downloads/
 downloades/
 vector_db/
 *.wav
+downloades/*.wav
