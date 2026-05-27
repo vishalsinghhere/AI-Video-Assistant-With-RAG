@@ -338,6 +338,16 @@ with st.sidebar:
     st.markdown('<span class="badge badge-purple">Input</span>', unsafe_allow_html=True)
     source = st.text_input("YouTube URL or File Path", placeholder="https://youtube.com/watch?v=... or /path/to/file.mp4")
 
+    st.markdown('<span class="badge badge-cyan" style="margin-top:0.5rem;display:inline-block">Or Upload Locally</span>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Upload Video / Audio", type=["mp4", "mkv", "avi", "mov", "mp3", "wav", "m4a"], label_visibility="collapsed")
+    if uploaded_file is not None:
+        import os, tempfile
+        tmp_dir = tempfile.mkdtemp()
+        tmp_path = os.path.join(tmp_dir, uploaded_file.name)
+        with open(tmp_path, "wb") as f:
+            f.write(uploaded_file.read())
+        source = tmp_path
+
     language = st.selectbox("Language", ["english", "hinglish"], index=0)
 
     run_btn = st.button("⚡  Analyse", use_container_width=True)
