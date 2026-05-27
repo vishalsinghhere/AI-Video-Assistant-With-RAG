@@ -1,9 +1,9 @@
 import yt_dlp
 from pydub import AudioSegment
 import os
-#Extracting the audio from youtube in wav formate
-DOWNLOAD_DIR = 'downloads'
-os.makedirs(DOWNLOAD_DIR,exist_ok=True)
+
+DOWNLOAD_DIR = 'downloades'
+os.makedirs(DOWNLOAD_DIR,exist_ok = True)
 
 def download_youtube_audio(url :str) ->str:
     output_path = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
@@ -25,35 +25,32 @@ def download_youtube_audio(url :str) ->str:
     return filename
 
 
-# converting into mono
+
 def convert_to_wav(input_path: str) -> str:
     """Convert any audio/video file to WAV format using pydub."""
-    output_path = os.path.splitext(input_path)[0] + "_converted.wav" #Dectict Automaticly MP3, Mp4,
+    output_path = os.path.splitext(input_path)[0] + "_converted.wav"
     audio = AudioSegment.from_file(input_path)
-    audio = audio.set_channels(1).set_frame_rate(16000) #16khz #It's sets to mono audio remove 8d audio
+    audio = audio.set_channels(1).set_frame_rate(16000) #16khz
     audio.export(output_path, format="wav")
     return output_path
 
 
 
-#Convert into chunks coz it can not conver lagre vdos like 30 mint or more
-def chunk_audio(wav_path : str , chunk_minutes : int = 10) -> list: # 10 minits chunking
+def chunk_audio(wav_path : str , chunk_minutes : int = 10) -> list:
     audio = AudioSegment.from_wav(wav_path)
-    chunk_ms = chunk_minutes * 60 * 1000   # chunk mili second converting into seconds, seconds converting into minutes
+    chunk_ms = chunk_minutes * 60 * 1000 
 
     chunks = []
 
     for i, start in enumerate(range(0,len(audio),chunk_ms)):
         chunk = audio[start : start + chunk_ms]
-        chunk_path = f"{wav_path}_chunk_{i}.wav" # setting 0 index no to every audio
+        chunk_path = f"{wav_path}_chunk_{i}.wav"
         chunk.export(chunk_path , format = "wav")
 
         chunks.append(chunk_path)
     
     return chunks
 
-
-#Trigger Function that connect them all
 def process_input(source: str) -> list:
     if source.startswith("http://") or source.startswith("https://"):
         print("Detected YouTube URL. Downloading audio...")
@@ -66,3 +63,5 @@ def process_input(source: str) -> list:
     chunks = chunk_audio(wav_path)
     print(f"Audio ready — {len(chunks)} chunk(s) created.")
     return chunks
+
+

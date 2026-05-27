@@ -1,5 +1,6 @@
 # Virtual Environment
 .venv/
+venv/
 
 # Python cache
 __pycache__/
@@ -8,12 +9,9 @@ __pycache__/
 # Environment variables
 .env
 
-# Vector database
+# Vector DB / downloads
 vector_db/
-
-# Downloads
 downloads/
 
 # OS files
 .DS_Store
-Thumbs.db

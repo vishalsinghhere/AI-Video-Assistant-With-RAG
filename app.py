@@ -1,7 +1,5 @@
 import streamlit as st
 import time
-import tempfile
-import os
 from dotenv import load_dotenv
 from utils.audio_processor import process_input
 from core.transcriber import transcribe_all
@@ -160,7 +158,6 @@ h1, h2, h3, h4, h5, h6 {
 .badge-purple { background: rgba(124,58,237,0.2); color: var(--accent-glow); border: 1px solid rgba(124,58,237,0.3); }
 .badge-cyan   { background: rgba(6,182,212,0.15); color: var(--accent-2);    border: 1px solid rgba(6,182,212,0.3); }
 .badge-green  { background: rgba(16,185,129,0.15); color: var(--success);    border: 1px solid rgba(16,185,129,0.3); }
-.badge-orange { background: rgba(245,158,11,0.15); color: var(--warning);    border: 1px solid rgba(245,158,11,0.3); }
 
 /* ── Input & Buttons ── */
 .stTextInput > div > div > input,
@@ -200,56 +197,6 @@ h1, h2, h3, h4, h5, h6 {
 .stButton > button[kind="secondary"] {
     background: var(--surface-2) !important;
     border: 1px solid var(--border) !important;
-}
-
-/* File uploader styling */
-[data-testid="stFileUploader"] {
-    background: var(--surface-2) !important;
-    border: 1px dashed var(--border) !important;
-    border-radius: 8px !important;
-    padding: 0.5rem !important;
-}
-
-[data-testid="stFileUploader"]:hover {
-    border-color: var(--accent) !important;
-}
-
-[data-testid="stFileUploaderDropzone"] {
-    background: transparent !important;
-}
-
-/* Tab styling */
-.stTabs [data-baseweb="tab-list"] {
-    background: var(--surface-2) !important;
-    border-radius: 8px !important;
-    padding: 3px !important;
-    border: 1px solid var(--border) !important;
-    gap: 2px !important;
-}
-
-.stTabs [data-baseweb="tab"] {
-    background: transparent !important;
-    color: var(--text-muted) !important;
-    border-radius: 6px !important;
-    font-family: 'Syne', sans-serif !important;
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    padding: 0.4rem 0.8rem !important;
-}
-
-.stTabs [aria-selected="true"] {
-    background: var(--accent) !important;
-    color: white !important;
-}
-
-.stTabs [data-baseweb="tab-highlight"] {
-    display: none !important;
-}
-
-.stTabs [data-baseweb="tab-border"] {
-    display: none !important;
 }
 
 /* ── Progress / Status ── */
@@ -342,20 +289,6 @@ hr {
     word-break: break-word;
 }
 
-/* ── Source indicator ── */
-.source-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-}
-
 /* ── Stale Streamlit elements ── */
 .stProgress > div > div > div { background: var(--accent) !important; }
 .stSpinner > div { border-top-color: var(--accent) !important; }
@@ -377,7 +310,6 @@ for key, default in {
     "processing": False,
     "pipeline_done": False,
     "pipeline_steps": {},
-    "uploaded_tmp_path": None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -397,65 +329,14 @@ def render_step_bar(label: str, key: str, icon: str):
         <span>{icon} {label}</span>
     </div>""", unsafe_allow_html=True)
 
-def save_uploaded_file(uploaded_file) -> str:
-    """Save a Streamlit UploadedFile to a temp file and return its path."""
-    suffix = os.path.splitext(uploaded_file.name)[-1]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(uploaded_file.read())
-        return tmp.name
-
-def cleanup_tmp_file():
-    """Remove the temporary file created for an uploaded video."""
-    path = st.session_state.get("uploaded_tmp_path")
-    if path and os.path.exists(path):
-        try:
-            os.remove(path)
-        except OSError:
-            pass
-    st.session_state.uploaded_tmp_path = None
-
 # ─── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown('<div class="hero-title" style="font-size:1.6rem">🎬 AI<br>Video</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-sub">Meeting Intelligence</div>', unsafe_allow_html=True)
     st.markdown("---")
 
-    st.markdown('<span class="badge badge-purple">Input Source</span>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── Input mode tabs ──────────────────────────────────────────────────────
-    tab_url, tab_file = st.tabs(["🔗 URL / Path", "📁 Upload File"])
-
-    source = ""
-    input_mode = None  # "url" or "upload"
-
-    with tab_url:
-        url_input = st.text_input(
-            "YouTube URL or File Path",
-            placeholder="https://youtube.com/watch?v=... or /path/to/file.mp4",
-            label_visibility="collapsed",
-        )
-        if url_input.strip():
-            source = url_input.strip()
-            input_mode = "url"
-
-    with tab_file:
-        uploaded_file = st.file_uploader(
-            "Upload a video or audio file",
-            type=["mp4", "mkv", "avi", "mov", "webm", "mp3", "wav", "m4a", "ogg", "flac"],
-            label_visibility="collapsed",
-            help="Supported formats: MP4, MKV, AVI, MOV, WebM, MP3, WAV, M4A, OGG, FLAC",
-        )
-        if uploaded_file is not None:
-            st.markdown(f"""
-            <div class="source-indicator">
-                <span>📎</span>
-                <span>{uploaded_file.name}</span>
-                <span style="margin-left:auto">{uploaded_file.size // 1024} KB</span>
-            </div>""", unsafe_allow_html=True)
-            input_mode = "upload"
-
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('<span class="badge badge-purple">Input</span>', unsafe_allow_html=True)
+    source = st.text_input("YouTube URL or File Path", placeholder="https://youtube.com/watch?v=... or /path/to/file.mp4")
 
     language = st.selectbox("Language", ["english", "hinglish"], index=0)
 
@@ -481,22 +362,8 @@ st.markdown("---")
 
 # ── Run Pipeline ────────────────────────────────────────────────────────────────
 if run_btn:
-    # ── Resolve the actual source path ──────────────────────────────────────
-    resolved_source = None
-
-    if input_mode == "upload" and uploaded_file is not None:
-        # Save the uploaded bytes to a temp file so process_input can read it
-        cleanup_tmp_file()  # remove any previous temp file first
-        tmp_path = save_uploaded_file(uploaded_file)
-        st.session_state.uploaded_tmp_path = tmp_path
-        resolved_source = tmp_path
-    elif input_mode == "url" and source:
-        resolved_source = source
-    elif url_input.strip():
-        resolved_source = url_input.strip()
-
-    if not resolved_source:
-        st.error("Please enter a YouTube URL / file path **or** upload a local video/audio file.")
+    if not source.strip():
+        st.error("Please enter a YouTube URL or file path.")
     else:
         st.session_state.pipeline_done = False
         st.session_state.result = None
@@ -513,7 +380,7 @@ if run_btn:
                 st.info("⚙️ Pipeline running — see sidebar for live status…")
 
             update_step("audio", "active")
-            chunks = process_input(resolved_source)
+            chunks = process_input(source)
             update_step("audio", "done")
 
             update_step("transcript", "active")
@@ -546,9 +413,6 @@ if run_btn:
                 "key_decisions": decisions,
                 "open_questions": questions,
                 "rag_chain": rag_chain,
-                # Store input label for display
-                "source_label": uploaded_file.name if input_mode == "upload" and uploaded_file else resolved_source,
-                "source_type": input_mode or "url",
             }
             st.session_state.pipeline_done = True
             progress_placeholder.success("✅ Analysis complete!")
@@ -557,26 +421,14 @@ if run_btn:
             st.rerun()
 
         except Exception as e:
-            for k in ["audio", "transcript", "title", "summary", "extract", "rag"]:
+            for k in ["audio","transcript","title","summary","extract","rag"]:
                 if st.session_state.pipeline_steps.get(k) == "active":
                     st.session_state.pipeline_steps[k] = "pending"
-            # Clean up temp file on error
-            cleanup_tmp_file()
             progress_placeholder.error(f"❌ Error: {e}")
 
 # ── Results ──────────────────────────────────────────────────────────────────────
 if st.session_state.result:
     r = st.session_state.result
-
-    # Source indicator
-    source_icon = "📁" if r.get("source_type") == "upload" else "🔗"
-    source_badge = "badge-orange" if r.get("source_type") == "upload" else "badge-cyan"
-    source_label_text = r.get("source_label", "")
-    st.markdown(f"""
-    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem">
-        <span class="badge {source_badge}">{source_icon} {'Local File' if r.get('source_type') == 'upload' else 'URL / Path'}</span>
-        <span style="font-size:0.75rem;color:var(--text-muted)">{source_label_text}</span>
-    </div>""", unsafe_allow_html=True)
 
     # Title banner
     st.markdown(f"""
@@ -682,13 +534,12 @@ else:
         <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:0.5rem">
             Ready to Analyse
         </div>
-        <div style="color:var(--text-muted);font-size:0.85rem;max-width:420px;line-height:1.7">
-            Paste a YouTube URL or local file path in the <strong>URL / Path</strong> tab, or drag-and-drop a video/audio file in the <strong>Upload File</strong> tab. Then hit <strong>Analyse</strong>.
+        <div style="color:var(--text-muted);font-size:0.85rem;max-width:380px;line-height:1.7">
+            Paste a YouTube URL or local file path in the sidebar, choose your language, and hit <strong>Analyse</strong> to get started.
         </div>
         <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
             <span class="badge badge-purple">Transcription</span>
             <span class="badge badge-cyan">Summarisation</span>
             <span class="badge badge-green">RAG Chat</span>
-            <span class="badge badge-orange">Local Upload</span>
         </div>
     </div>""", unsafe_allow_html=True)

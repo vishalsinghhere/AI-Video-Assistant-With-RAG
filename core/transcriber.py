@@ -1,4 +1,4 @@
-import whisper #Transcribe the vdo will generate the full text 2)Conver the Hindi audio into English
+import whisper
 import os
 import requests
 from pydub import AudioSegment
